@@ -36,7 +36,7 @@ class _SopalAppState extends State<SopalApp> {
     return AppScope(
       state: widget.state,
       child: MaterialApp(
-        title: 'SoPal',
+        title: 'SoPal (Social Palace)',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           fontFamily: 'Arsenal',

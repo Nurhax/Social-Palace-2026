@@ -75,9 +75,12 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              const SopalMark(size: 160),
-              const ComicText('SoPal', fontSize: 56, strokeWidth: 7),
+              const SopalMark(size: 250),
               const SizedBox(height: 28),
+              const ComicText('Social Palace', fontSize: 48, strokeWidth: 7),
+              const ComicText('"Gamify your social life"',
+                  fontSize: 12, strokeWidth: 5),
+              const SizedBox(height: 20),
               const ComicText('Enter Your ID', fontSize: 26, strokeWidth: 5),
               const SizedBox(height: 20),
               ComicTextField(controller: _controller, hint: 'Enter here...'),
@@ -102,6 +105,8 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
                           fontWeight: FontWeight.bold,
                           fontStyle: FontStyle.italic,
                           decoration: TextDecoration.underline,
+                          decorationThickness: 2,
+                          decorationColor: Colors.black,
                         ),
                       ),
                     ],

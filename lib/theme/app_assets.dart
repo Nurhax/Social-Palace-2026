@@ -20,21 +20,21 @@ class AppAssets {
   static const String _img = 'assets/images';
 
   // logo
-  static const String logoMark = '$_img/logo/sopal_mark.png';
+  static const String logoMark = '$_img/Logov1.png';
 
   // header
-  static const String headerBg = '$_img/header/header_bg.png';
-  static const String headerLogsIcon = '$_img/header/icon_logs.png';
-  static const String headerSettingsIcon = '$_img/header/icon_settings.png';
+  static const String headerBg = '$_img/BGSL.png';
+  static const String headerLogsIcon = '$_img/LogsHeader.png';
+  static const String headerSettingsIcon = '$_img/SettingsHeader.png';
 
   // bottom nav
-  static const String navSocialLinks = '$_img/nav/social_links.png';
+  static const String navSocialLinks = '$_img/SocialLinksNavBar.png';
   static const String navSocialLinksActive =
-      '$_img/nav/social_links_active.png';
-  static const String navLogs = '$_img/nav/logs.png';
-  static const String navLogsActive = '$_img/nav/logs_active.png';
-  static const String navSettings = '$_img/nav/settings.png';
-  static const String navSettingsActive = '$_img/nav/settings_active.png';
+      '$_img/SocialLinksNavBarActive.png';
+  static const String navLogs = '$_img/LogsNavBar.png';
+  static const String navLogsActive = '$_img/LogsNavBarActive.png';
+  static const String navSettings = '$_img/SettingsNavBar.png';
+  static const String navSettingsActive = '$_img/SettingsNavBarActive.png';
 
   // arcana glyphs, e.g. "LOVERS" -> assets/images/arcana/lovers.png
   static String arcana(String name) => '$_img/arcana/${name.toLowerCase()}.png';

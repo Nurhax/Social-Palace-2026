@@ -42,7 +42,7 @@ class _LogsScreenState extends State<LogsScreen> {
     return Scaffold(
       backgroundColor: colors.primary,
       appBar: const SopalHeader(
-        title: 'LOGS',
+        title: 'Logs',
         iconAsset: AppAssets.headerLogsIcon,
         fallbackIcon: Icons.forum,
       ),

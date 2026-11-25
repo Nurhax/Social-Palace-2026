@@ -34,8 +34,10 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             SopalMark(size: 200),
             SizedBox(height: 12),
-            ComicText('SoPal', fontSize: 64, strokeWidth: 8),
+            ComicText('Social Palace', fontSize: 64, strokeWidth: 8),
             SizedBox(height: 40),
+            ComicText('"Gamify your social life"',
+                fontSize: 16, strokeWidth: 5),
             CircularProgressIndicator(color: Colors.white),
           ],
         ),
