@@ -1,44 +1,37 @@
-# SoPal (Social Palace) — Flutter UI
+# SoPal (Social Palace)
 
-A Flutter implementation of the "SoPal" Figma mockup — a Persona 5–styled
-Social Link tracker app (red/black/white comic-book look, slanted ribbon
-banners, arcana badges, jagged buttons).
+SoPal is a Flutter app for tracking social links, inspired by Persona's Social
+Links and styled with a comic-book look.
 
-## What's implemented
+## Features
 
-- **Splash screen** — animated logo intro.
-- **Enter ID / Get ID** — simple auth flow (mock, no backend).
-- **Main screen** — list of Social Links with arcana badge, name ribbon,
-  level progress bar, favourite star, and +/- EXP buttons.
-- **Add Social Link** — form with an Arcana Selection grid (13 arcana).
-- **Social Link detail** — view/edit/delete a link.
-- **Logs** — per-person log list + add-log screen.
-- **Settings** — stats, least-favourite, ID, and a **Select Theme** screen
-  that swaps the app's palette between P5 / P4 / P3-style colors.
+- Branded splash and ID screens. Create named local IDs and sign in by
+  entering one; each ID has its own Social Link list.
+- Add, edit, and delete Social Links; choose from 13 arcana.
+- Track each link's level (1–10), adjust EXP, and mark favourites.
+- Add dated logs to each link and browse them from the Logs tab.
+- View link and log totals, see the lowest-level link, and switch between
+  Persona 5, Persona 4, and Persona 3 color palettes.
+- Comic-style text, ribbons, buttons, and badges, with bundled logo, navigation,
+  header, and arcana artwork.
 
-All comic-style shapes (slanted ribbons, jagged "burst" buttons, outlined
-headline text) are built with custom `ClipPath`/`CustomPainter` widgets in
-`lib/widgets/comic_shapes.dart` and `lib/widgets/sopal_chrome.dart` — no
-external design assets are required.
+## Run
 
-## Run it
+Install the Flutter SDK, then from the project directory run:
 
 ```bash
 flutter pub get
 flutter run
 ```
 
-State is a single in-memory `AppState` (`lib/state/app_state.dart`) shared
-via a small `InheritedNotifier` — no external state-management package is
-used, so `flutter pub get` only needs to fetch `cupertino_icons`.
+## Data and assets
 
-## Notes / next steps
+Social Links, logs, saved IDs, the last-used ID, and the selected palette are
+stored locally with `shared_preferences`. An ID is only a local profile name;
+there is no account service, backend, or cloud sync. Data is tied to the
+device's app storage and may be lost if that storage is cleared or the app is
+uninstalled.
 
-- Data is in-memory only (resets on restart). Wire it up to a backend or
-  local storage (e.g. `sqflite`, `hive`, or your API) as a next step.
-- The logo/arcana artwork is a simplified geometric approximation of the
-  original hand-drawn mockup — swap in the real illustrated assets from
-  Figma (export as SVG/PNG) for a pixel-perfect match if needed.
-- Font: currently uses the default Material font with bold-italic +
-  stroke-outline text to mimic the comic look. For an exact match, add the
-  mockup's actual display font as a custom font asset.
+Image assets are in `assets/images/`, with arcana glyphs in
+`assets/images/arcana/`. Flutter draws the comic shapes and much of the
+interface in code; missing optional images have built-in fallbacks.
