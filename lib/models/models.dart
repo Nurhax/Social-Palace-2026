@@ -4,6 +4,11 @@ class Arcana {
   final String name;
   final IconData icon;
   const Arcana(this.name, this.icon);
+
+  static Arcana byName(String name) => kArcanaList.firstWhere(
+        (a) => a.name == name.toUpperCase(),
+        orElse: () => kArcanaList.first,
+      );
 }
 
 /// The 13-item arcana grid from the "Arcana Selection" screen.
@@ -30,6 +35,17 @@ class LogEntry {
 
   String get dateLabel =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
+
+  Map<String, dynamic> toJson() => {
+        'date': date.toIso8601String(),
+        'text': text,
+      };
+
+  factory LogEntry.fromJson(Map<String, dynamic> json) => LogEntry(
+        date:
+            DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+        text: json['text'] as String? ?? '',
+      );
 }
 
 class SocialLink {
@@ -52,4 +68,28 @@ class SocialLink {
   int get totalLogs => logs.length;
 
   String get lastLogLabel => logs.isEmpty ? '-' : logs.first.dateLabel;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'arcana': arcana.name,
+        'level': level,
+        'exp': exp,
+        'favourite': favourite,
+        'logs': logs.map((l) => l.toJson()).toList(),
+      };
+
+  factory SocialLink.fromJson(Map<String, dynamic> json) {
+    final logs = ((json['logs'] as List?) ?? [])
+        .map((e) => LogEntry.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date)); // newest first
+    return SocialLink(
+      name: json['name'] as String? ?? '',
+      arcana: Arcana.byName(json['arcana'] as String? ?? 'NULL'),
+      level: (json['level'] as num?)?.toInt() ?? 1,
+      exp: (json['exp'] as num?)?.toInt() ?? 0,
+      favourite: json['favourite'] as bool? ?? false,
+      logs: logs,
+    );
+  }
 }

@@ -15,15 +15,62 @@ class EnterIdScreen extends StatefulWidget {
 
 class _EnterIdScreenState extends State<EnterIdScreen> {
   final _controller = TextEditingController();
+  bool _prefilled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Pre-fill with the last ID used on this device.
+    if (!_prefilled) {
+      _prefilled = true;
+      _controller.text = AppScope.of(context).lastId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toast(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _enter() {
+    final state = AppScope.of(context);
+    final input = _controller.text.trim();
+    if (input.isEmpty) {
+      _toast('Enter your ID first');
+      return;
+    }
+    if (!state.signIn(input)) {
+      _toast('ID "$input" not found. Tap "Tap Here" to create it.');
+      return;
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+    );
+  }
+
+  Future<void> _createId() async {
+    final created = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const GetIdScreen()),
+    );
+    if (created != null && mounted) {
+      setState(() => _controller.text = created);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final state = AppScope.of(context);
-    final colors = state.colors;
+    final colors = AppScope.of(context).colors;
     return Scaffold(
       backgroundColor: colors.primary,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
             children: [
@@ -36,11 +83,7 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
               ComicTextField(controller: _controller, hint: 'Enter here...'),
               const SizedBox(height: 16),
               GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const GetIdScreen()),
-                  );
-                },
+                onTap: _createId,
                 child: const Text.rich(
                   TextSpan(
                     children: [
@@ -66,16 +109,8 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
                 ),
               ),
               const SizedBox(height: 36),
-              ComicButton(
-                label: 'ENTER',
-                fontSize: 26,
-                onTap: () {
-                  state.setId(_controller.text.isEmpty ? 'GUEST*' : _controller.text);
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const MainScreen()),
-                  );
-                },
-              ),
+              ComicButton(label: 'ENTER', fontSize: 26, onTap: _enter),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -84,6 +119,8 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
   }
 }
 
+/// "Create your ID": the user types the name themselves
+/// (e.g. WorkFriends, HiyaHiya). Each ID keeps its own social links.
 class GetIdScreen extends StatefulWidget {
   const GetIdScreen({super.key});
 
@@ -92,23 +129,52 @@ class GetIdScreen extends StatefulWidget {
 }
 
 class _GetIdScreenState extends State<GetIdScreen> {
+  final _controller = TextEditingController();
+
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppScope.of(context).generateId();
-      setState(() {});
-    });
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toast(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _copy() {
+    final id = _controller.text.trim();
+    if (id.isEmpty) {
+      _toast('Type an ID first');
+      return;
+    }
+    Clipboard.setData(ClipboardData(text: id));
+    _toast('Copied to clipboard');
+  }
+
+  void _done() {
+    final id = _controller.text.trim();
+    if (id.isEmpty) {
+      _toast('Type an ID first');
+      return;
+    }
+    final state = AppScope.of(context);
+    if (!state.createId(id)) {
+      _toast('"$id" is already used. Pick another name.');
+      return;
+    }
+    // Go back to the Enter ID screen (ID is pre-filled); the user logs in there.
+    Navigator.of(context).pop(id);
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = AppScope.of(context);
-    final colors = state.colors;
+    final colors = AppScope.of(context).colors;
     return Scaffold(
       backgroundColor: colors.primary,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
             children: [
@@ -116,29 +182,22 @@ class _GetIdScreenState extends State<GetIdScreen> {
               const SopalMark(size: 160),
               const ComicText('SoPal', fontSize: 56, strokeWidth: 7),
               const SizedBox(height: 28),
-              const ComicText('Your ID', fontSize: 26, strokeWidth: 5),
-              const SizedBox(height: 20),
-              SlantedBox(
-                color: Colors.black,
-                borderColor: Colors.white,
-                child: Text(
-                  state.userId.isEmpty ? '...' : state.userId,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontStyle: FontStyle.italic,
-                    fontSize: 22,
-                  ),
+              const ComicText('Create Your ID', fontSize: 26, strokeWidth: 5),
+              const SizedBox(height: 8),
+              const Text(
+                'Name it anything, e.g. WorkFriends or HiyaHiya.\nEach ID keeps its own Social Links.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
+              const SizedBox(height: 20),
+              ComicTextField(controller: _controller, hint: 'e.g. WorkFriends'),
               const SizedBox(height: 16),
               GestureDetector(
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: state.userId));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Copied to clipboard')),
-                  );
-                },
+                onTap: _copy,
                 child: const Text(
                   'Copy to clipboard',
                   style: TextStyle(
@@ -150,15 +209,8 @@ class _GetIdScreenState extends State<GetIdScreen> {
                 ),
               ),
               const SizedBox(height: 36),
-              ComicButton(
-                label: 'DONE',
-                fontSize: 26,
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const MainScreen()),
-                  );
-                },
-              ),
+              ComicButton(label: 'DONE', fontSize: 26, onTap: _done),
+              const SizedBox(height: 24),
             ],
           ),
         ),

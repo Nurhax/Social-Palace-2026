@@ -1,38 +1,41 @@
-import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
 
+/// Holds everything the UI needs and persists it on the device.
+///
+/// Storage layout (shared_preferences):
+///   sopal.ids         -> list of every ID created on this device
+///   sopal.lastId      -> the ID last entered (pre-filled on the Enter ID screen)
+///   sopal.palette     -> selected theme
+///   sopal.data.<id>   -> JSON list of that ID's social links (+ logs)
+///
+/// Every ID (e.g. "WorkFriends", "HiyaHiya") has its own separate social links.
 class AppState extends ChangeNotifier {
-  String userId = '';
-  SopalPalette palette = SopalPalette.p5;
+  AppState._(this._prefs);
 
-  final List<SocialLink> socialLinks = [
-    SocialLink(
-      name: 'Ann Takamaki',
-      arcana: kArcanaList.firstWhere((a) => a.name == 'LOVERS'),
-      level: 10,
-      exp: 4,
-      favourite: true,
-      logs: [
-        LogEntry(
-            date: DateTime(2025, 7, 13),
-            text: 'Jalan ke blokm bareng" yg lain'),
-        LogEntry(date: DateTime(2025, 6, 10), text: 'Nonton HTTYD berdua'),
-        LogEntry(date: DateTime(2025, 6, 10), text: 'Ke Rangkasbitung'),
-        LogEntry(date: DateTime(2025, 5, 13), text: 'Ngawas ujian bareng'),
-      ],
-    ),
-    SocialLink(
-      name: 'Futaba Sakura',
-      arcana: kArcanaList.firstWhere((a) => a.name == 'HERMIT'),
-      level: 5,
-      exp: 2,
-      logs: [
-        LogEntry(date: DateTime(2025, 4, 2), text: 'Ngoding bareng seharian'),
-      ],
-    ),
-  ];
+  final SharedPreferences _prefs;
+
+  static const _kIds = 'sopal.ids';
+  static const _kLastId = 'sopal.lastId';
+  static const _kPalette = 'sopal.palette';
+  static String _kData(String id) => 'sopal.data.${id.toLowerCase()}';
+
+  /// Call once before runApp().
+  static Future<AppState> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final state = AppState._(prefs);
+    state._loadPrefs();
+    return state;
+  }
+
+  List<String> savedIds = [];
+  String lastId = '';
+  String userId = ''; // the ID currently signed in ('' = signed out)
+  SopalPalette palette = SopalPalette.p5;
+  List<SocialLink> socialLinks = [];
 
   SopalColors get colors => kPalettes[palette]!;
 
@@ -43,31 +46,100 @@ class AppState extends ChangeNotifier {
 
   int get totalLogs => socialLinks.fold(0, (sum, s) => sum + s.totalLogs);
 
-  void generateId() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789';
-    final rnd = Random();
-    userId =
-        '${List.generate(7, (_) => chars[rnd.nextInt(chars.length)]).join()}*';
+  void _loadPrefs() {
+    savedIds = List<String>.from(_prefs.getStringList(_kIds) ?? const []);
+    lastId = _prefs.getString(_kLastId) ?? '';
+    final saved = _prefs.getString(_kPalette);
+    palette = SopalPalette.values.firstWhere(
+      (p) => p.name == saved,
+      orElse: () => SopalPalette.p5,
+    );
+  }
+
+  // ---------------------------------------------------------------- IDs
+
+  /// Returns the stored spelling of an ID (case-insensitive), or null.
+  String? findId(String input) {
+    final key = input.trim().toLowerCase();
+    for (final id in savedIds) {
+      if (id.toLowerCase() == key) return id;
+    }
+    return null;
+  }
+
+  /// Creates a new empty ID. Returns false if it's empty or already used.
+  bool createId(String input) {
+    final id = input.trim();
+    if (id.isEmpty || findId(id) != null) return false;
+    savedIds.add(id);
+    _prefs.setStringList(_kIds, savedIds);
+    _prefs.setString(_kData(id), jsonEncode(<dynamic>[]));
+    lastId = id;
+    _prefs.setString(_kLastId, id);
+    notifyListeners();
+    return true;
+  }
+
+  /// Signs in to an existing ID and loads its social links.
+  bool signIn(String input) {
+    final id = findId(input);
+    if (id == null) return false;
+    userId = id;
+    lastId = id;
+    _prefs.setString(_kLastId, id);
+    socialLinks = _readLinks(id);
+    notifyListeners();
+    return true;
+  }
+
+  void signOut() {
+    userId = '';
+    socialLinks = [];
     notifyListeners();
   }
 
-  void setId(String id) {
-    userId = id;
-    notifyListeners();
+  // ------------------------------------------------------------ storage
+
+  List<SocialLink> _readLinks(String id) {
+    final raw = _prefs.getString(_kData(id));
+    if (raw == null) return [];
+    try {
+      final list = jsonDecode(raw) as List;
+      return list
+          .map((e) => SocialLink.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
+
+  void _saveLinks() {
+    if (userId.isEmpty) return;
+    _prefs.setString(
+      _kData(userId),
+      jsonEncode(socialLinks.map((l) => l.toJson()).toList()),
+    );
+  }
+
+  // ------------------------------------------------------------- theme
 
   void setPalette(SopalPalette p) {
     palette = p;
+    _prefs.setString(_kPalette, p.name);
     notifyListeners();
   }
 
+  // ------------------------------------------------------ social links
+
   void addSocialLink(SocialLink link) {
     socialLinks.add(link);
+    _saveLinks();
     notifyListeners();
   }
 
   void removeSocialLink(SocialLink link) {
     socialLinks.remove(link);
+    _saveLinks();
     notifyListeners();
   }
 
@@ -82,22 +154,28 @@ class AppState extends ChangeNotifier {
       link.level -= 1;
     }
     link.exp = link.exp.clamp(0, 10);
+    _saveLinks();
     notifyListeners();
   }
 
   void toggleFavourite(SocialLink link) {
     link.favourite = !link.favourite;
+    _saveLinks();
     notifyListeners();
   }
 
   void addLog(SocialLink link, String text) {
     link.logs.insert(0, LogEntry(date: DateTime.now(), text: text));
+    _saveLinks();
     notifyListeners();
   }
 
-  /// Public wrapper so screens can request a rebuild after mutating a
-  /// [SocialLink]'s fields directly (e.g. after inline editing).
-  void refresh() => notifyListeners();
+  /// Call after mutating a [SocialLink] directly (e.g. after editing it):
+  /// saves to local storage and rebuilds the UI.
+  void refresh() {
+    _saveLinks();
+    notifyListeners();
+  }
 }
 
 /// Simple InheritedNotifier wrapper so screens can do

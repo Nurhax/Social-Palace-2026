@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../state/app_state.dart';
+import '../theme/app_assets.dart';
 import '../theme/app_theme.dart';
 import '../widgets/comic_shapes.dart';
 import '../widgets/social_link_card.dart';
@@ -17,8 +18,12 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colors.primary,
-      appBar: const SopalHeader(title: 'Settings'),
-      body: Padding(
+      appBar: const SopalHeader(
+        title: 'Settings',
+        iconAsset: AppAssets.headerSettingsIcon,
+        fallbackIcon: Icons.settings,
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             _row('ID:', state.userId),
-            const Spacer(),
+            const SizedBox(height: 40),
             Center(
               child: ComicButton(
                 label: 'Theme',
@@ -61,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
                 label: 'LOGOUT',
                 fontSize: 22,
                 onTap: () {
-                  state.setId('');
+                  state.signOut();
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const EnterIdScreen()),
                     (route) => false,
@@ -107,6 +112,17 @@ class SettingsScreen extends StatelessWidget {
 class ThemeSelectScreen extends StatelessWidget {
   const ThemeSelectScreen({super.key});
 
+  String _badge(SopalPalette p) {
+    switch (p) {
+      case SopalPalette.p5:
+        return 'P5';
+      case SopalPalette.p4:
+        return 'P4';
+      case SopalPalette.p3:
+        return 'P3';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
@@ -115,66 +131,91 @@ class ThemeSelectScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: colors.primary,
       appBar: const SopalHeader(title: 'Select\nTheme'),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                children: SopalPalette.values.map((p) {
-                  final c = kPalettes[p]!;
-                  final selected = state.palette == p;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: GestureDetector(
-                      onTap: () => state.setPalette(p),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 46,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: c.primary,
-                              border: Border.all(color: Colors.black, width: 3),
-                            ),
-                            child: Text(
-                              p == SopalPalette.p4
-                                  ? 'P4'
-                                  : p == SopalPalette.p3
-                                      ? 'P3'
-                                      : 'P5',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontStyle: FontStyle.italic,
-                                color: p == SopalPalette.p4 ? Colors.black : Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: SlantedBox(
-                              color: Colors.black,
-                              borderColor: selected ? Colors.amber : Colors.white,
-                              child: Text(
-                                c.label,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FontStyle.italic,
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  children: SopalPalette.values.map((p) {
+                    final c = kPalettes[p]!;
+                    final selected = state.palette == p;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: GestureDetector(
+                        onTap: () => state.setPalette(p),
+                        child: Opacity(
+                          // Only the selected theme is fully highlighted.
+                          opacity: selected ? 1 : 0.55,
+                          child: Row(
+                            children: [
+                              Transform.rotate(
+                                angle: selected ? -0.08 : -0.03,
+                                child: Container(
+                                  width: selected ? 70 : 56,
+                                  height: selected ? 56 : 44,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: c.primary,
+                                    border: Border.all(
+                                        color: Colors.black, width: 3),
+                                  ),
+                                  child: Text(
+                                    _badge(p),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: selected ? 22 : 18,
+                                      color: p == SopalPalette.p4
+                                          ? Colors.black
+                                          : Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: SlantedBox(
+                                  color: Colors.black,
+                                  borderColor:
+                                      selected ? Colors.white : Colors.white38,
+                                  borderWidth: selected ? 4 : 2,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          c.label,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      ),
+                                      if (selected)
+                                        const Icon(Icons.check,
+                                            color: Colors.white),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
-            ComicButton(label: 'DONE', fontSize: 24, onTap: () => Navigator.of(context).pop()),
-          ],
+              ComicButton(
+                label: 'DONE',
+                fontSize: 24,
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
         ),
       ),
     );

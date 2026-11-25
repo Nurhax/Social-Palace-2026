@@ -1,200 +1,257 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
+import '../theme/app_assets.dart';
 import '../widgets/comic_shapes.dart';
 import '../widgets/social_link_card.dart';
 import '../widgets/sopal_chrome.dart';
 
-class LogsScreen extends StatelessWidget {
+/// Logs per social link. A link's logs only show after its name is tapped
+/// (tap again to collapse). When the year changes between logs, the year is
+/// shown as a divider.
+class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final state = AppScope.of(context);
-    final colors = state.colors;
-    return Scaffold(
-      backgroundColor: colors.primary,
-      appBar: const SopalHeader(title: 'LOGS'),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        itemCount: state.socialLinks.length,
-        itemBuilder: (context, index) {
-          final link = state.socialLinks[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                ArcanaBadge(arcana: link.arcana),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => LogDetailScreen(link: link)),
-                    ),
-                    child: SlantedBox(
-                      color: Colors.black,
-                      borderColor: Colors.white,
-                      skew: 14,
-                      shadowOffset: 4,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              link.name,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontStyle: FontStyle.italic,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+  State<LogsScreen> createState() => _LogsScreenState();
 }
 
-class LogDetailScreen extends StatefulWidget {
-  final SocialLink link;
-  const LogDetailScreen({super.key, required this.link});
-
-  @override
-  State<LogDetailScreen> createState() => _LogDetailScreenState();
-}
-
-class _LogDetailScreenState extends State<LogDetailScreen> {
+class _LogsScreenState extends State<LogsScreen> {
+  SocialLink? _open;
   final _controller = TextEditingController();
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggle(SocialLink link) {
+    setState(() {
+      _open = identical(_open, link) ? null : link;
+      _controller.clear();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final colors = state.colors;
-    final link = widget.link;
+    final links = state.socialLinks;
 
     return Scaffold(
       backgroundColor: colors.primary,
-      appBar: const SopalHeader(title: 'LOGS'),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                ArcanaBadge(arcana: link.arcana),
-                const SizedBox(width: 8),
-                Expanded(
+      appBar: const SopalHeader(
+        title: 'LOGS',
+        iconAsset: AppAssets.headerLogsIcon,
+        fallbackIcon: Icons.forum,
+      ),
+      body: links.isEmpty
+          ? const Center(
+              child: Text(
+                'No social links yet.\nAdd one in Social Links.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
+                  fontSize: 18,
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              itemCount: links.length,
+              itemBuilder: (context, index) => _section(links[index]),
+            ),
+    );
+  }
+
+  Widget _section(SocialLink link) {
+    final isOpen = identical(_open, link);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              ArcanaBadge(arcana: link.arcana),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _toggle(link),
                   child: SlantedBox(
                     color: Colors.black,
                     borderColor: Colors.white,
-                    child: Text(
-                      link.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontStyle: FontStyle.italic,
-                        fontSize: 18,
-                      ),
+                    skew: 14,
+                    shadowOffset: 4,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            link.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontStyle: FontStyle.italic,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          isOpen
+                              ? Icons.keyboard_arrow_down
+                              : Icons.chevron_right,
+                          color: Colors.white,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  border: Border.all(color: Colors.white, width: 3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.separated(
-                        itemCount: link.logs.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final log = link.logs[index];
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${log.dateLabel}:',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontStyle: FontStyle.italic,
-                                  fontSize: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  log.text,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontStyle: FontStyle.italic,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: TextField(
-                        controller: _controller,
-                        style: const TextStyle(fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Fill the log here...',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ComicButton(
-                        label: 'ADD',
-                        fontSize: 18,
-                        onTap: () {
-                          if (_controller.text.trim().isEmpty) return;
-                          state.addLog(link, _controller.text.trim());
-                          _controller.clear();
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ],
+              ),
+            ],
+          ),
+          if (isOpen) _panel(link),
+        ],
+      ),
+    );
+  }
+
+  Widget _panel(SocialLink link) {
+    final state = AppScope.of(context);
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border.all(color: Colors.white, width: 3),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (link.logs.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Text(
+                'No logs yet.',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
+            )
+          else
+            ..._logRows(link),
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
             ),
-          ],
-        ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: TextField(
+              controller: _controller,
+              style: const TextStyle(
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.bold,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Fill the log here...',
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ComicButton(
+              label: 'ADD',
+              fontSize: 18,
+              onTap: () {
+                final text = _controller.text.trim();
+                if (text.isEmpty) return;
+                state.addLog(link, text);
+                _controller.clear();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Log rows (newest first). A year divider is inserted whenever the year
+  /// differs from the previous row; the first row is compared with the
+  /// current year, so older-year logs at the top are labelled too.
+  List<Widget> _logRows(SocialLink link) {
+    final rows = <Widget>[];
+    var previousYear = DateTime.now().year;
+    for (final log in link.logs) {
+      if (log.date.year != previousYear) {
+        rows.add(_yearDivider(log.date.year));
+        previousYear = log.date.year;
+      }
+      rows.add(_logRow(log));
+    }
+    return rows;
+  }
+
+  Widget _yearDivider(int year) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: Colors.white54, thickness: 2)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              '$year',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                fontSize: 18,
+                letterSpacing: 2,
+              ),
+            ),
+          ),
+          const Expanded(child: Divider(color: Colors.white54, thickness: 2)),
+        ],
+      ),
+    );
+  }
+
+  Widget _logRow(LogEntry log) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${log.dateLabel}:',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
+              fontSize: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              log.text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontStyle: FontStyle.italic,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

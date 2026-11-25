@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../theme/app_assets.dart';
 import '../widgets/comic_shapes.dart';
 
-/// Red/black icon box for an Arcana, matching the small icon tiles in the
-/// mockup (e.g. the heart for LOVERS, the shrouded figure for HERMIT).
+/// Red tile + black frame + label drawn in code; the glyph inside comes from
+/// assets/images/arcana/<name>.png (falls back to a Material icon).
 class ArcanaBadge extends StatelessWidget {
   final Arcana arcana;
   final double size;
   final bool showLabel;
 
-  const ArcanaBadge({super.key, required this.arcana, this.size = 74, this.showLabel = true});
+  const ArcanaBadge(
+      {super.key, required this.arcana, this.size = 74, this.showLabel = true});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,13 @@ class ArcanaBadge extends StatelessWidget {
                 border: Border.all(color: Colors.black, width: 4),
               ),
               alignment: Alignment.center,
-              child: Icon(arcana.icon, color: Colors.white, size: size * 0.5),
+              child: AssetImageOr(
+                path: AppAssets.arcana(arcana.name),
+                width: size * 0.62,
+                height: size * 0.62,
+                fallback:
+                    Icon(arcana.icon, color: Colors.white, size: size * 0.5),
+              ),
             ),
           ),
           if (showLabel)
@@ -56,13 +64,14 @@ class ArcanaBadge extends StatelessWidget {
 }
 
 /// A row from the main "Social Links" list: arcana badge, name ribbon with
-/// level progress bar, favourite star, level number, checkmark (view), and
-/// stacked +/- exp buttons — mirroring "Main Screen.jpg" / "Add EXP.jpg".
+/// level progress bar, favourite star (tap to toggle), level number, and
+/// stacked +/- exp buttons. Tapping the name opens the details.
 class SocialLinkRow extends StatelessWidget {
   final SocialLink link;
   final VoidCallback onOpen;
   final VoidCallback onAddExp;
   final VoidCallback onRemoveExp;
+  final VoidCallback onToggleFavourite;
 
   const SocialLinkRow({
     super.key,
@@ -70,6 +79,7 @@ class SocialLinkRow extends StatelessWidget {
     required this.onOpen,
     required this.onAddExp,
     required this.onRemoveExp,
+    required this.onToggleFavourite,
   });
 
   @override
@@ -89,7 +99,7 @@ class SocialLinkRow extends StatelessWidget {
                 borderColor: Colors.white,
                 skew: 14,
                 shadowOffset: 4,
-                padding: const EdgeInsets.fromLTRB(18, 10, 34, 10),
+                padding: const EdgeInsets.fromLTRB(18, 10, 26, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -108,14 +118,22 @@ class SocialLinkRow extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Icon(
-                          link.favourite ? Icons.star : Icons.star_border,
-                          color: Colors.red,
-                          size: 22,
+                        // Favourite star: red + filled when favourite.
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onToggleFavourite,
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(
+                              link.favourite ? Icons.star : Icons.star_border,
+                              color: link.favourite ? Colors.red : Colors.white,
+                              size: 26,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
                     Row(
                       children: [
                         Expanded(
@@ -131,7 +149,8 @@ class SocialLinkRow extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
                           color: Colors.white,
                           child: Text(
                             '${link.level}',
@@ -162,7 +181,8 @@ class SocialLinkRow extends StatelessWidget {
     );
   }
 
-  Widget _smallSquareButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _smallSquareButton(
+      {required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Transform.rotate(

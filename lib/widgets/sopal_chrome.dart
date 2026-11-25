@@ -1,9 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../theme/app_assets.dart';
 import '../theme/app_theme.dart';
 
-/// A simplified geometric approximation of the jagged red/black/white SoPal
-/// shard logo seen on the splash and header screens.
+/// The SoPal shard logo. Uses assets/images/logo/sopal_mark.png when present,
+/// otherwise falls back to a simple geometric drawing.
 class SopalMark extends StatelessWidget {
   final double size;
   const SopalMark({super.key, this.size = 90});
@@ -13,7 +14,10 @@ class SopalMark extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(painter: _MarkPainter()),
+      child: AssetImageOr(
+        path: AppAssets.logoMark,
+        fallback: CustomPaint(painter: _MarkPainter()),
+      ),
     );
   }
 }
@@ -93,39 +97,72 @@ class _MarkPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Top header bar with the SoPal mark + a title, used across most screens.
+/// Top header bar. Pass [iconAsset] (+ [fallbackIcon]) to show a screen
+/// specific icon instead of the SoPal mark, and the header automatically
+/// grows by the status-bar height so nothing hides under it.
 class SopalHeader extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
   final bool showFullLogo;
   final double height;
+  final String? iconAsset;
+  final IconData? fallbackIcon;
 
   const SopalHeader({
     super.key,
     this.title,
     this.showFullLogo = false,
     this.height = 150,
+    this.iconAsset,
+    this.fallbackIcon,
   });
 
   @override
   Size get preferredSize => Size.fromHeight(height);
 
+  Widget _leading() {
+    final iconSize = height * 0.62;
+    if (iconAsset == null) return SopalMark(size: iconSize);
+    return AssetImageOr(
+      path: iconAsset!,
+      height: iconSize,
+      fallback: fallbackIcon != null
+          ? Icon(fallbackIcon, color: Colors.white, size: iconSize * 0.7)
+          : SopalMark(size: iconSize),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Scaffold reserves (preferredSize + status bar) for the app bar slot.
+    final topInset = MediaQuery.of(context).padding.top;
     return Container(
-      height: height,
+      height: height + topInset,
       decoration: const BoxDecoration(
         color: Color(0xFF7A3232),
         border: Border(bottom: BorderSide(color: Colors.black, width: 4)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          SopalMark(size: height * 0.62),
-          const SizedBox(width: 10),
-          Expanded(
-            child: showFullLogo
-                ? const ComicText('SoPal', fontSize: 46)
-                : ComicText(title ?? '', fontSize: 34),
+          Image.asset(
+            AppAssets.headerBg,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                const SizedBox.shrink(),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, topInset, 16, 0),
+            child: Row(
+              children: [
+                _leading(),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: showFullLogo
+                      ? const ComicText('SoPal', fontSize: 46)
+                      : ComicText(title ?? '', fontSize: 34),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -133,35 +170,42 @@ class SopalHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// Bottom nav bar: Social Links / Logs / Settings, matching the rounded
-/// white bar fixed at the bottom of the mockup.
+/// Bottom nav bar: Social Links / Logs / Settings.
+/// Raised by the system navigation bar height, so it no longer sits under
+/// the 3-button navigation (and still clears gesture navigation).
 class SopalBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const SopalBottomNav({super.key, required this.currentIndex, required this.onTap});
+  const SopalBottomNav(
+      {super.key, required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: EdgeInsets.only(top: 10, bottom: bottomInset + 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _navItem(0, Icons.link, 'Social Links'),
-          _navItem(1, Icons.forum, 'Logs'),
-          _navItem(2, Icons.settings, 'Settings'),
+          _navItem(0, Icons.link, 'Social Links', AppAssets.navSocialLinks,
+              AppAssets.navSocialLinksActive),
+          _navItem(1, Icons.forum, 'Logs', AppAssets.navLogs,
+              AppAssets.navLogsActive),
+          _navItem(2, Icons.settings, 'Settings', AppAssets.navSettings,
+              AppAssets.navSettingsActive),
         ],
       ),
     );
   }
 
-  Widget _navItem(int index, IconData icon, String label) {
+  Widget _navItem(int index, IconData icon, String label, String asset,
+      String activeAsset) {
     final active = index == currentIndex;
     final color = active ? Colors.red : Colors.black87;
     return GestureDetector(
@@ -172,7 +216,14 @@ class SopalBottomNav extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 28),
+            SizedBox(
+              height: 34,
+              child: AssetImageOr(
+                path: active ? activeAsset : asset,
+                height: 34,
+                fallback: Icon(icon, color: color, size: 28),
+              ),
+            ),
             const SizedBox(height: 2),
             Text(
               label,

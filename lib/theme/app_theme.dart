@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Persona-style palettes. Users can switch these from Settings > Theme,
-/// mirroring the "Select Theme" screen in the Figma mockup (P5 / P4 / P3).
-enum SopalPalette { p5, p5Alt, p4, p3 }
+/// Persona-style palettes. Users can switch these from Settings > Theme.
+enum SopalPalette { p5, p4, p3 }
 
 class SopalColors {
   final Color primary; // main background red/yellow/blue
@@ -23,12 +22,6 @@ const Map<SopalPalette, SopalColors> kPalettes = {
     primary: Color(0xFFCE3233),
     primaryDark: Color(0xFF8C1F20),
     accent: Color(0xFFE94141),
-    label: 'Persona 5',
-  ),
-  SopalPalette.p5Alt: SopalColors(
-    primary: Color(0xFFB6272A),
-    primaryDark: Color(0xFF6E1517),
-    accent: Color(0xFFFFFFFF),
     label: 'Persona 5',
   ),
   SopalPalette.p4: SopalColors(
