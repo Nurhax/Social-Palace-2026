@@ -1,4 +1,4 @@
-name: SoPal
+name: sopal
 description: "SoPal - Social Palace, a Persona-style Social Link tracker"
 publish_to: 'none'
 version: 1.0.0+1
@@ -30,9 +30,12 @@ flutter_launcher_icons:
   android: true
   image_path: "assets/images/Logov2.png"
   adaptive_icon_background: "#CE3333"
-  adaptive_icon_foreground: "#CE3333"
+  adaptive_icon_foreground: "assets/images/Logov2_Circle.png"
 
 flutter_native_splash:
   color: "#CE3333"
-  image: "assets/images/Logov2.png"
+  image: "assets/images/Logov2_CircleSmall.png"
   android: true
+  android_12:
+    color: "#CE3333"
+    image: "assets/images/Logov2_CircleSmall.png"
