@@ -184,20 +184,13 @@ class _GetIdScreenState extends State<GetIdScreen> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              const SopalMark(size: 160),
-              const ComicText('SoPal', fontSize: 56, strokeWidth: 7),
+              const SopalMark(size: 250),
               const SizedBox(height: 28),
+              const ComicText('Social Palace', fontSize: 48, strokeWidth: 7),
+              const ComicText('"Gamify your social life"',
+                  fontSize: 12, strokeWidth: 5),
+              const SizedBox(height: 20),
               const ComicText('Create Your ID', fontSize: 26, strokeWidth: 5),
-              const SizedBox(height: 8),
-              const Text(
-                'Name it anything, e.g. WorkFriends or HiyaHiya.\nEach ID keeps its own Social Links.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
               const SizedBox(height: 20),
               ComicTextField(controller: _controller, hint: 'e.g. WorkFriends'),
               const SizedBox(height: 16),

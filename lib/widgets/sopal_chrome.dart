@@ -158,7 +158,7 @@ class SopalHeader extends StatelessWidget implements PreferredSizeWidget {
                 const SizedBox(width: 36),
                 Expanded(
                   child: showFullLogo
-                      ? const ComicText('Social Palace', fontSize: 38)
+                      ? const ComicText('Social Links', fontSize: 38)
                       : ComicText(title ?? '', fontSize: 34),
                 ),
               ],
