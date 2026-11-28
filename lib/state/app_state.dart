@@ -39,9 +39,40 @@ class AppState extends ChangeNotifier {
 
   SopalColors get colors => kPalettes[palette]!;
 
+  /// Ranks links by level, then EXP, then star, then number of logs.
+  int _compare(SocialLink a, SocialLink b) {
+    var c = a.level.compareTo(b.level);
+    if (c != 0) return c;
+    c = a.exp.compareTo(b.exp);
+    if (c != 0) return c;
+    c = (a.favourite ? 1 : 0).compareTo(b.favourite ? 1 : 0);
+    if (c != 0) return c;
+    return a.totalLogs.compareTo(b.totalLogs);
+  }
+
+  /// Highest ranked social link (null when there are none).
+  SocialLink? get mostFavourite {
+    if (socialLinks.isEmpty) return null;
+    return socialLinks.reduce((a, b) => _compare(a, b) >= 0 ? a : b);
+  }
+
+  /// Lowest ranked social link (null when there are none).
   SocialLink? get leastFavourite {
     if (socialLinks.isEmpty) return null;
-    return socialLinks.reduce((a, b) => a.level <= b.level ? a : b);
+    return socialLinks.reduce((a, b) => _compare(a, b) <= 0 ? a : b);
+  }
+
+  /// The most recent log across all social links, with the link it belongs to.
+  LatestLog? get latestLog {
+    LatestLog? best;
+    for (final link in socialLinks) {
+      for (final log in link.logs) {
+        if (best == null || log.date.isAfter(best.log.date)) {
+          best = LatestLog(link, log);
+        }
+      }
+    }
+    return best;
   }
 
   int get totalLogs => socialLinks.fold(0, (sum, s) => sum + s.totalLogs);
@@ -176,6 +207,13 @@ class AppState extends ChangeNotifier {
     _saveLinks();
     notifyListeners();
   }
+}
+
+/// A log entry together with the social link it belongs to.
+class LatestLog {
+  final SocialLink link;
+  final LogEntry log;
+  const LatestLog(this.link, this.log);
 }
 
 /// Simple InheritedNotifier wrapper so screens can do

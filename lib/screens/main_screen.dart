@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../audio/audio_service.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../widgets/comic_shapes.dart';
+import '../widgets/persona_transitions.dart';
 import '../widgets/social_link_card.dart';
 import '../widgets/sopal_chrome.dart';
 import 'logs_screen.dart';
@@ -18,19 +20,51 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _tab = 0;
+  bool _fromRight = false; // wipe direction follows the tab order
+
+  static const List<Widget> _pages = [
+    _SocialLinksPage(),
+    LogsScreen(),
+    SettingsScreen(),
+  ];
+
+  void _onTab(int i) {
+    if (i == _tab) return;
+    AudioService.instance.playSelect();
+    setState(() {
+      _fromRight = i < _tab;
+      _tab = i;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      const _SocialLinksPage(),
-      const LogsScreen(),
-      const SettingsScreen(),
-    ];
+    final colors = AppScope.of(context).colors;
+    final currentKey = ValueKey<int>(_tab);
     return Scaffold(
-      body: pages[_tab],
+      // Same colour as the pages, so the transparent nav bar blends in.
+      backgroundColor: colors.primary,
+      body: AnimatedSwitcher(
+        duration: PersonaWipeStyle.menu.duration,
+        layoutBuilder: (current, previous) => Stack(
+          fit: StackFit.expand,
+          children: [...previous, if (current != null) current],
+        ),
+        transitionBuilder: (child, animation) {
+          // Outgoing page stays still underneath; only the new page wipes in.
+          if (child.key != currentKey) return child;
+          return PersonaWipe(
+            animation: animation,
+            style: PersonaWipeStyle.menu,
+            fromRight: _fromRight,
+            child: child,
+          );
+        },
+        child: KeyedSubtree(key: currentKey, child: _pages[_tab]),
+      ),
       bottomNavigationBar: SopalBottomNav(
         currentIndex: _tab,
-        onTap: (i) => setState(() => _tab = i),
+        onTap: _onTab,
       ),
     );
   }
@@ -57,14 +91,15 @@ class _SocialLinksPage extends StatelessWidget {
                 label: '+',
                 fontSize: 28,
                 onTap: () async {
-                  final result = await Navigator.of(context).push<SocialLink>(
-                    MaterialPageRoute(
-                        builder: (_) => const AddSocialLinkScreen()),
+                  final result = await Navigator.of(context).push(
+                    PersonaRoute<SocialLink>(
+                      builder: (_) => const AddSocialLinkScreen(),
+                    ),
                   );
                   if (result != null) {
                     state.addSocialLink(result);
                     if (context.mounted) {
-                      _showAddedPopup(context);
+                      _showPopup(context, 'New Social\nLink Added!');
                     }
                   }
                 },
@@ -74,32 +109,82 @@ class _SocialLinksPage extends StatelessWidget {
           final link = state.socialLinks[index];
           return SocialLinkRow(
             link: link,
-            onOpen: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                  builder: (_) => SocialLinkDetailScreen(link: link)),
-            ),
-            onAddExp: () => state.addExp(link, 1),
-            onRemoveExp: () => state.addExp(link, -1),
-            onToggleFavourite: () => state.toggleFavourite(link),
+            onOpen: () {
+              AudioService.instance.playSelect();
+              Navigator.of(context).push(
+                PersonaRoute<void>(
+                  builder: (_) => SocialLinkDetailScreen(link: link),
+                ),
+              );
+            },
+            onAddExp: () {
+              AudioService.instance.playSelect();
+              final before = link.level;
+              state.addExp(link, 1);
+              if (link.level > before) {
+                _showPopup(
+                  context,
+                  '${_short(link.name)}\nLevel Up!\nLv. ${link.level}',
+                );
+              }
+            },
+            onRemoveExp: () {
+              AudioService.instance.playDeselect();
+              final before = link.level;
+              state.addExp(link, -1);
+              if (link.level < before) {
+                _showPopup(
+                  context,
+                  '${_short(link.name)}\nLevel Down!\nLv. ${link.level}',
+                );
+              }
+            },
+            onToggleFavourite: () {
+              // turning the star on = select, turning it off = deselect
+              if (link.favourite) {
+                AudioService.instance.playDeselect();
+              } else {
+                AudioService.instance.playSelect();
+              }
+              state.toggleFavourite(link);
+            },
           );
         },
       ),
     );
   }
+}
 
-  void _showAddedPopup(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black45,
-      builder: (_) => const Dialog(
+/// Keeps long names from overflowing the burst popup.
+String _short(String name) =>
+    name.length > 14 ? '${name.substring(0, 13)}…' : name;
+
+/// The burst popup used for "New Social Link Added!" and level up / down.
+/// It closes itself after a moment (only that dialog, never another page).
+void _showPopup(BuildContext context, String message) {
+  showDialog<void>(
+    context: context,
+    barrierColor: Colors.black45,
+    builder: (dialogContext) {
+      final route = ModalRoute.of(dialogContext);
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (route != null && route.isActive) {
+          if (route.isCurrent) {
+            route.navigator?.pop();
+          } else {
+            route.navigator?.removeRoute(route);
+          }
+        }
+      });
+      return Dialog(
         backgroundColor: Colors.transparent,
         child: BurstBox(
           child: Padding(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: Text(
-              'New Social\nLink Added!',
+              message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
                 fontSize: 20,
@@ -108,12 +193,7 @@ class _SocialLinksPage extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).maybePop();
-      }
-    });
-  }
+      );
+    },
+  );
 }

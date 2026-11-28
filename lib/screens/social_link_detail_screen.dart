@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../audio/audio_service.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../widgets/comic_shapes.dart';
@@ -78,6 +79,7 @@ class _SocialLinkDetailScreenState extends State<SocialLinkDetailScreen> {
               Center(
                 child: ComicButton(
                   label: 'BACK',
+                  deselect: true,
                   onTap: () => Navigator.of(context).pop(),
                 ),
               ),
@@ -103,12 +105,16 @@ class _SocialLinkDetailScreenState extends State<SocialLinkDetailScreen> {
           children: [
             _iconSquareButton(
               icon: Icons.edit,
-              onTap: () => setState(() => _editing = true),
+              onTap: () {
+                AudioService.instance.playSelect();
+                setState(() => _editing = true);
+              },
             ),
             const SizedBox(width: 12),
             _iconSquareButton(
               icon: Icons.delete,
               onTap: () async {
+                AudioService.instance.playDeselect();
                 final state = AppScope.of(context);
                 final confirmed = await showDialog<bool>(
                   context: context,

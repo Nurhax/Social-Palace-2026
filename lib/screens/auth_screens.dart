@@ -1,10 +1,35 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../audio/audio_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/comic_shapes.dart';
+import '../widgets/persona_transitions.dart';
 import '../widgets/sopal_chrome.dart';
 import 'main_screen.dart';
+
+/// Logo that shrinks when space is tight (e.g. keyboard open), so the whole
+/// auth screen stays centered and never needs to scroll.
+class _ResponsiveLogo extends StatelessWidget {
+  const _ResponsiveLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final size = math.max(
+            0.0,
+            math.min(
+                250.0, math.min(constraints.maxWidth, constraints.maxHeight)),
+          );
+          return SopalMark(size: size);
+        },
+      ),
+    );
+  }
+}
 
 class EnterIdScreen extends StatefulWidget {
   const EnterIdScreen({super.key});
@@ -50,14 +75,20 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
       _toast('ID "$input" not found. Tap "Tap Here" to create it.');
       return;
     }
+    // Persona 5 music starts after login.
+    AudioService.instance.playBgm();
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MainScreen()),
+      PersonaRoute<void>(
+        builder: (_) => const MainScreen(),
+        style: PersonaWipeStyle.opening,
+      ),
     );
   }
 
   Future<void> _createId() async {
-    final created = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const GetIdScreen()),
+    AudioService.instance.playSelect();
+    final created = await Navigator.of(context).push(
+      PersonaRoute<String>(builder: (_) => const GetIdScreen()),
     );
     if (created != null && mounted) {
       setState(() => _controller.text = created);
@@ -70,16 +101,24 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
     return Scaffold(
       backgroundColor: colors.primary,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
-              const SopalMark(size: 250),
-              const SizedBox(height: 28),
-              const ComicText('Social Palace', fontSize: 48, strokeWidth: 7),
-              const ComicText('"Gamify your social life"',
-                  fontSize: 12, strokeWidth: 5),
+              const _ResponsiveLogo(),
+              const SizedBox(height: 20),
+              const ComicText(
+                'Social Palace',
+                fontSize: 48,
+                strokeWidth: 7,
+                textAlign: TextAlign.center,
+              ),
+              const ComicText(
+                '"Gamify your social life"',
+                fontSize: 12,
+                strokeWidth: 5,
+              ),
               const SizedBox(height: 20),
               const ComicText('Enter Your ID', fontSize: 26, strokeWidth: 5),
               const SizedBox(height: 20),
@@ -113,9 +152,8 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 28),
               ComicButton(label: 'ENTER', fontSize: 26, onTap: _enter),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -154,6 +192,7 @@ class _GetIdScreenState extends State<GetIdScreen> {
       _toast('Type an ID first');
       return;
     }
+    AudioService.instance.playSelect();
     Clipboard.setData(ClipboardData(text: id));
     _toast('Copied to clipboard');
   }
@@ -179,16 +218,24 @@ class _GetIdScreenState extends State<GetIdScreen> {
     return Scaffold(
       backgroundColor: colors.primary,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
-              const SopalMark(size: 250),
-              const SizedBox(height: 28),
-              const ComicText('Social Palace', fontSize: 48, strokeWidth: 7),
-              const ComicText('"Gamify your social life"',
-                  fontSize: 12, strokeWidth: 5),
+              const _ResponsiveLogo(),
+              const SizedBox(height: 20),
+              const ComicText(
+                'Social Palace',
+                fontSize: 48,
+                strokeWidth: 7,
+                textAlign: TextAlign.center,
+              ),
+              const ComicText(
+                '"Gamify your social life"',
+                fontSize: 12,
+                strokeWidth: 5,
+              ),
               const SizedBox(height: 20),
               const ComicText('Create Your ID', fontSize: 26, strokeWidth: 5),
               const SizedBox(height: 20),
@@ -206,9 +253,8 @@ class _GetIdScreenState extends State<GetIdScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 28),
               ComicButton(label: 'DONE', fontSize: 26, onTap: _done),
-              const SizedBox(height: 24),
             ],
           ),
         ),

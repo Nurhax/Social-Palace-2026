@@ -107,6 +107,9 @@ class SopalHeader extends StatelessWidget implements PreferredSizeWidget {
   final String? iconAsset;
   final IconData? fallbackIcon;
 
+  /// When true the title can be swiped horizontally (for long/large titles).
+  final bool scrollableTitle;
+
   const SopalHeader({
     super.key,
     this.title,
@@ -114,6 +117,7 @@ class SopalHeader extends StatelessWidget implements PreferredSizeWidget {
     this.height = 150,
     this.iconAsset,
     this.fallbackIcon,
+    this.scrollableTitle = false,
   });
 
   @override
@@ -131,75 +135,99 @@ class SopalHeader extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
+  Widget _titleWidget() {
+    final text = showFullLogo
+        ? const ComicText('Social Links', fontSize: 38)
+        : ComicText(title ?? '', fontSize: 34);
+    if (!scrollableTitle) return text;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      // padding keeps the thick text outline from being clipped
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      child: text,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Scaffold reserves (preferredSize + status bar) for the app bar slot.
     final topInset = MediaQuery.of(context).padding.top;
-    return Container(
-      height: height + topInset,
-      decoration: const BoxDecoration(
-        color: Color(0xFF7A3232),
-        border: Border(bottom: BorderSide(color: Colors.black, width: 4)),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            AppAssets.headerBg,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-                const SizedBox.shrink(),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(16, topInset, 16, 0),
-            child: Row(
-              children: [
-                _leading(),
-                const SizedBox(width: 36),
-                Expanded(
-                  child: showFullLogo
-                      ? const ComicText('Social Links', fontSize: 38)
-                      : ComicText(title ?? '', fontSize: 34),
-                ),
-              ],
+    return RepaintBoundary(
+      child: Container(
+        height: height + topInset,
+        decoration: const BoxDecoration(
+          color: Color(0xFF7A3232),
+          border: Border(bottom: BorderSide(color: Colors.black, width: 4)),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const AssetImageOr(
+              path: AppAssets.headerBg,
+              fit: BoxFit.cover,
+              fallback: SizedBox.shrink(),
             ),
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, topInset, 16, 0),
+              child: Row(
+                children: [
+                  _leading(),
+                  const SizedBox(width: 36),
+                  Expanded(child: _titleWidget()),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 /// Bottom nav bar: Social Links / Logs / Settings.
-/// Raised by the system navigation bar height, so it no longer sits under
-/// the 3-button navigation (and still clears gesture navigation).
+/// A floating squircle with a black stroke, lifted above the system
+/// navigation bar (3-button or gesture) by its height.
 class SopalBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const SopalBottomNav(
-      {super.key, required this.currentIndex, required this.onTap});
+  /// Fill inside the squircle (white by default).
+  final Color fillColor;
+
+  const SopalBottomNav({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+    this.fillColor = Colors.white,
+  });
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
-      ),
-      padding: EdgeInsets.only(top: 10, bottom: bottomInset + 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _navItem(0, Icons.link, 'Social Links', AppAssets.navSocialLinks,
-              AppAssets.navSocialLinksActive),
-          _navItem(1, Icons.forum, 'Logs', AppAssets.navLogs,
-              AppAssets.navLogsActive),
-          _navItem(2, Icons.settings, 'Settings', AppAssets.navSettings,
-              AppAssets.navSettingsActive),
-        ],
+    // Floating: margins on every side, squircle outline in black.
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 6, 16, bottomInset + 10),
+      child: Container(
+        decoration: ShapeDecoration(
+          color: fillColor,
+          shape: ContinuousRectangleBorder(
+            borderRadius: BorderRadius.circular(56),
+            side: const BorderSide(color: Colors.black, width: 4),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _navItem(0, Icons.link, 'Social Links', AppAssets.navSocialLinks,
+                AppAssets.navSocialLinksActive),
+            _navItem(1, Icons.forum, 'Logs', AppAssets.navLogs,
+                AppAssets.navLogsActive),
+            _navItem(2, Icons.settings, 'Settings', AppAssets.navSettings,
+                AppAssets.navSettingsActive),
+          ],
+        ),
       ),
     );
   }
@@ -207,7 +235,7 @@ class SopalBottomNav extends StatelessWidget {
   Widget _navItem(int index, IconData icon, String label, String asset,
       String activeAsset) {
     final active = index == currentIndex;
-    final color = active ? Colors.red : Colors.black87;
+    final color = active ? const Color(0xFFFF0401) : Colors.black87;
     return GestureDetector(
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
@@ -229,9 +257,9 @@ class SopalBottomNav extends StatelessWidget {
               label,
               style: TextStyle(
                 color: color,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
-                fontSize: 11,
+                fontSize: active ? 12 : 11,
               ),
             ),
           ],

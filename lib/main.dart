@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'audio/audio_service.dart';
 import 'screens/splash_screen.dart';
 import 'state/app_state.dart';
 
@@ -6,6 +8,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = await AppState.load();
   runApp(SopalApp(state: state));
+  // Don't block the first frame on audio setup.
+  unawaited(AudioService.instance.init());
 }
 
 class SopalApp extends StatefulWidget {
@@ -16,30 +20,55 @@ class SopalApp extends StatefulWidget {
   State<SopalApp> createState() => _SopalAppState();
 }
 
-class _SopalAppState extends State<SopalApp> {
-  void _onChanged() => setState(() {});
-
+class _SopalAppState extends State<SopalApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    widget.state.addListener(_onChanged);
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final binding = WidgetsBinding.instance;
+      // Observers run in reverse order, so register last to hear back first.
+      binding
+        ..removeObserver(this)
+        ..addObserver(this);
+    });
   }
 
   @override
   void dispose() {
-    widget.state.removeListener(_onChanged);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  // Pause the music when the app goes to the background.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      AudioService.instance.pauseBgm();
+    } else if (state == AppLifecycleState.resumed) {
+      AudioService.instance.resumeBgm();
+    }
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    unawaited(AudioService.instance.playDeselect());
+    return false;
   }
 
   @override
   Widget build(BuildContext context) {
+    // AppScope is an InheritedNotifier: widgets that read it rebuild by
+    // themselves when the state changes, so the whole app doesn't need to
+    // be rebuilt from the root on every change.
     return AppScope(
       state: widget.state,
       child: MaterialApp(
-        title: 'SoPal (Social Palace)',
+        title: 'SoPal',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          fontFamily: 'Arsenal',
+          fontFamily: 'Roboto',
           useMaterial3: true,
           colorSchemeSeed: Colors.red,
         ),

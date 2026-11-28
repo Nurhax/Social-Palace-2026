@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../audio/audio_service.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/comic_shapes.dart';
+import '../widgets/persona_transitions.dart';
 import '../widgets/social_link_card.dart';
 import '../widgets/sopal_chrome.dart';
 
@@ -58,13 +60,15 @@ class _AddSocialLinkScreenState extends State<AddSocialLinkScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () async {
-                          final selected =
-                              await Navigator.of(context).push<Arcana>(
-                            MaterialPageRoute(
-                                builder: (_) => const ArcanaSelectionScreen()),
+                          AudioService.instance.playSelect();
+                          final selected = await Navigator.of(context).push(
+                            PersonaRoute<Arcana>(
+                              builder: (_) => const ArcanaSelectionScreen(),
+                            ),
                           );
-                          if (selected != null)
+                          if (selected != null) {
                             setState(() => _arcana = selected);
+                          }
                         },
                         child: SlantedBox(
                           color: Colors.black,
@@ -172,7 +176,10 @@ class ArcanaSelectionScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final arcana = kArcanaList[index];
                       return GestureDetector(
-                        onTap: () => Navigator.of(context).pop(arcana),
+                        onTap: () {
+                          AudioService.instance.playSelect();
+                          Navigator.of(context).pop(arcana);
+                        },
                         child: Center(
                             child: ArcanaBadge(arcana: arcana, size: 84)),
                       );

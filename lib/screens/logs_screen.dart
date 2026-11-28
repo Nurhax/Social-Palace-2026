@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../audio/audio_service.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_assets.dart';
@@ -27,6 +28,12 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   void _toggle(SocialLink link) {
+    // opening a panel = select sound, closing it = deselect sound
+    if (identical(_open, link)) {
+      AudioService.instance.playDeselect();
+    } else {
+      AudioService.instance.playSelect();
+    }
     setState(() {
       _open = identical(_open, link) ? null : link;
       _controller.clear();
@@ -45,6 +52,7 @@ class _LogsScreenState extends State<LogsScreen> {
         title: 'Logs',
         iconAsset: AppAssets.headerLogsIcon,
         fallbackIcon: Icons.forum,
+        scrollableTitle: true,
       ),
       body: links.isEmpty
           ? const Center(

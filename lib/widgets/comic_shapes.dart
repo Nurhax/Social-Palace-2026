@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../audio/audio_service.dart';
 
 /// A slanted parallelogram with one corner "folded", used for the black
 /// name ribbons, text fields, and rectangular buttons (ENTER / ADD / DONE)
@@ -30,8 +31,79 @@ class ParallelogramClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
-/// A slanted card used as the container behind a [ParallelogramClipper]
-/// shape, giving it a black outline + drop shadow like the mockup's ribbons.
+/// Parallelogram outline shared by the fill, the border and the shadow.
+Path _slantedPath(Size size, double skew, double foldCorner,
+    {double inset = 0}) {
+  final w = size.width;
+  final h = size.height;
+  final i = inset;
+  final path = Path()..moveTo(skew + i, i);
+  if (foldCorner > 0) {
+    path.lineTo(w - foldCorner - i, i);
+    path.lineTo(w - i, foldCorner + i);
+  } else {
+    path.lineTo(w - i, i);
+  }
+  path.lineTo(w - skew - i, h - i);
+  path.lineTo(i, h - i);
+  path.close();
+  return path;
+}
+
+/// Draws the black drop shadow, the fill and a border that follows the whole
+/// slanted outline (so the border is never cut off at the corners).
+class _SlantedBoxPainter extends CustomPainter {
+  final Color color;
+  final Color borderColor;
+  final double borderWidth;
+  final double skew;
+  final double foldCorner;
+  final double shadowOffset;
+
+  const _SlantedBoxPainter({
+    required this.color,
+    required this.borderColor,
+    required this.borderWidth,
+    required this.skew,
+    required this.foldCorner,
+    required this.shadowOffset,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final outer = _slantedPath(size, skew, foldCorner);
+
+    canvas.drawPath(
+      outer.shift(Offset(shadowOffset, shadowOffset)),
+      Paint()..color = Colors.black,
+    );
+    canvas.drawPath(outer, Paint()..color = color);
+
+    if (borderWidth > 0) {
+      canvas.drawPath(
+        _slantedPath(size, skew, foldCorner, inset: borderWidth / 2),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = borderWidth
+          ..strokeJoin = StrokeJoin.miter
+          ..color = borderColor,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SlantedBoxPainter old) =>
+      old.color != color ||
+      old.borderColor != borderColor ||
+      old.borderWidth != borderWidth ||
+      old.skew != skew ||
+      old.foldCorner != foldCorner ||
+      old.shadowOffset != shadowOffset;
+}
+
+/// A slanted card with a black drop shadow and an outline that wraps the
+/// whole shape, like the mockup's ribbons. It sizes itself to [child] (or
+/// fills the width it is given).
 class SlantedBox extends StatelessWidget {
   final Widget child;
   final Color color;
@@ -56,30 +128,20 @@ class SlantedBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clipper = ParallelogramClipper(skew: skew, foldCorner: foldCorner);
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Transform.translate(
-            offset: Offset(shadowOffset, shadowOffset),
-            child: ClipPath(
-              clipper: clipper,
-              child: Container(color: Colors.black),
-            ),
-          ),
-        ),
-        ClipPath(
-          clipper: clipper,
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              color: color,
-              border: Border.all(color: borderColor, width: borderWidth),
-            ),
-            child: child,
-          ),
-        ),
-      ],
+    return CustomPaint(
+      painter: _SlantedBoxPainter(
+        color: color,
+        borderColor: borderColor,
+        borderWidth: borderWidth,
+        skew: skew,
+        foldCorner: foldCorner,
+        shadowOffset: shadowOffset,
+      ),
+      // the border sits inside the padding, like a Container border would
+      child: Padding(
+        padding: padding + EdgeInsets.all(borderWidth),
+        child: child,
+      ),
     );
   }
 }
@@ -91,7 +153,8 @@ class BurstClipper extends CustomClipper<Path> {
   final double innerRadiusFactor;
   final double seed;
 
-  const BurstClipper({this.spikes = 12, this.innerRadiusFactor = 0.78, this.seed = 0});
+  const BurstClipper(
+      {this.spikes = 12, this.innerRadiusFactor = 0.78, this.seed = 0});
 
   @override
   Path getClip(Size size) {
@@ -171,6 +234,9 @@ class ComicButton extends StatelessWidget {
   final double fontSize;
   final IconData? icon;
 
+  /// true -> plays the "deselect" sound (e.g. BACK) instead of "select".
+  final bool deselect;
+
   const ComicButton({
     super.key,
     required this.label,
@@ -179,12 +245,22 @@ class ComicButton extends StatelessWidget {
     this.textColor = Colors.black,
     this.fontSize = 22,
     this.icon,
+    this.deselect = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              if (deselect) {
+                AudioService.instance.playDeselect();
+              } else {
+                AudioService.instance.playSelect();
+              }
+              onTap!();
+            },
       child: SlantedBox(
         color: color,
         borderColor: Colors.black,

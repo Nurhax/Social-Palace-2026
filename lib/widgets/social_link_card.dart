@@ -25,7 +25,7 @@ class ArcanaBadge extends StatelessWidget {
             angle: -0.05,
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFE23B3B),
+                color: const Color(0xFFFF0401),
                 border: Border.all(color: Colors.black, width: 4),
               ),
               alignment: Alignment.center,
@@ -63,6 +63,8 @@ class ArcanaBadge extends StatelessWidget {
   }
 }
 
+const double _levelBoxWidth = 32;
+
 /// A row from the main "Social Links" list: arcana badge, name ribbon with
 /// level progress bar, favourite star (tap to toggle), level number, and
 /// stacked +/- exp buttons. Tapping the name opens the details.
@@ -94,77 +96,102 @@ class SocialLinkRow extends StatelessWidget {
           Expanded(
             child: GestureDetector(
               onTap: onOpen,
-              child: SlantedBox(
-                color: Colors.black,
-                borderColor: Colors.white,
-                skew: 14,
-                shadowOffset: 4,
-                padding: const EdgeInsets.fromLTRB(18, 10, 26, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            link.name,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                              fontSize: 18,
+              child: Stack(
+                children: [
+                  // Banner, pushed down so the star can sit above it.
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: SlantedBox(
+                      color: Colors.black,
+                      borderColor: Colors.white,
+                      skew: 14,
+                      shadowOffset: 4,
+                      padding: const EdgeInsets.fromLTRB(20, 16, 22, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // right padding keeps long names clear of the star
+                          Padding(
+                            padding: const EdgeInsets.only(right: 40),
+                            child: Text(
+                              link.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 20,
+                              ),
                             ),
                           ),
-                        ),
-                        // Favourite star: red + filled when favourite.
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: onToggleFavourite,
-                          child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Icon(
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(2),
+                                  child: LinearProgressIndicator(
+                                    value: link.exp / 10,
+                                    minHeight: 10,
+                                    backgroundColor: Colors.white24,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // fixed width so the star can be centred on it
+                              Container(
+                                width: _levelBoxWidth,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 1),
+                                alignment: Alignment.center,
+                                color: Colors.white,
+                                child: Text(
+                                  '${link.level}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Favourite star, exactly above the level box.
+                  // Level box centre = 3 (border) + 22 (padding) + width / 2
+                  // from the banner's right edge; the star box is 40 wide.
+                  Positioned(
+                    top: 0,
+                    right: 3 + 22 + _levelBoxWidth / 2 - 20,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onToggleFavourite,
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: AssetImageOr(
+                            path: link.favourite
+                                ? AppAssets.favouriteOn
+                                : AppAssets.favouriteOff,
+                            width: 32,
+                            height: 32,
+                            fallback: Icon(
                               link.favourite ? Icons.star : Icons.star_border,
                               color: link.favourite ? Colors.red : Colors.white,
-                              size: 26,
+                              size: 30,
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(2),
-                            child: LinearProgressIndicator(
-                              value: link.exp / 10,
-                              minHeight: 8,
-                              backgroundColor: Colors.white24,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 1),
-                          color: Colors.white,
-                          child: Text(
-                            '${link.level}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
