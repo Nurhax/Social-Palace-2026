@@ -35,6 +35,9 @@ class AppAssets {
   // favourite star (social link row)
   static const String favouriteOff = '$_img/Favourite.png';
   static const String favouriteOn = '$_img/FavouriteActive.png';
+  static const String selectArcanaArrow = '$_img/SelectArcanaArrow.png';
+  static const String editIcon = '$_img/EditIcon.png';
+  static const String deleteIcon = '$_img/DeleteIcon.png';
 
   // arcana glyphs, e.g. "LOVERS" -> assets/images/arcana/lovers.png
   static String arcana(String name) => '$_img/arcana/${name.toLowerCase()}.png';
@@ -52,6 +55,9 @@ class AppAssets {
         navSettingsActive,
         favouriteOff,
         favouriteOn,
+        selectArcanaArrow,
+        editIcon,
+        deleteIcon,
         ...kArcanaList.map((a) => arcana(a.name)),
       ];
 

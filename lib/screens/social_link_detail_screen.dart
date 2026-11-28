@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../audio/audio_service.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
+import '../theme/app_assets.dart';
+import '../theme/app_theme.dart';
 import '../widgets/comic_shapes.dart';
 import '../widgets/social_link_card.dart';
 
@@ -104,7 +106,8 @@ class _SocialLinkDetailScreenState extends State<SocialLinkDetailScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             _iconSquareButton(
-              icon: Icons.edit,
+              assetPath: AppAssets.editIcon,
+              fallbackIcon: Icons.edit,
               onTap: () {
                 AudioService.instance.playSelect();
                 setState(() => _editing = true);
@@ -112,7 +115,8 @@ class _SocialLinkDetailScreenState extends State<SocialLinkDetailScreen> {
             ),
             const SizedBox(width: 12),
             _iconSquareButton(
-              icon: Icons.delete,
+              assetPath: AppAssets.deleteIcon,
+              fallbackIcon: Icons.delete,
               onTap: () async {
                 AudioService.instance.playDeselect();
                 final state = AppScope.of(context);
@@ -149,13 +153,11 @@ class _SocialLinkDetailScreenState extends State<SocialLinkDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Name',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const ComicText('Name', fontSize: 16, strokeWidth: 4),
           const SizedBox(height: 8),
           ComicTextField(controller: _nameController),
           const SizedBox(height: 20),
-          const Text('Level (1-10)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const ComicText('Level (1-10)', fontSize: 16, strokeWidth: 4),
           const SizedBox(height: 8),
           ComicTextField(
               controller: _levelController, keyboardType: TextInputType.number),
@@ -186,37 +188,27 @@ class _SocialLinkDetailScreenState extends State<SocialLinkDetailScreen> {
   Widget _infoRow(String label, String value) {
     return Row(
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontStyle: FontStyle.italic,
-              fontSize: 20,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontStyle: FontStyle.italic,
-            fontSize: 22,
-          ),
-        ),
+        Expanded(child: ComicText(label, fontSize: 20, strokeWidth: 5)),
+        ComicText(value, fontSize: 22, strokeWidth: 5),
       ],
     );
   }
 
   Widget _iconSquareButton(
-      {required IconData icon, required VoidCallback onTap}) {
+      {required String assetPath,
+      required IconData fallbackIcon,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: 56,
         height: 56,
-        color: Colors.black,
-        child: Icon(icon, color: Colors.white),
+        child: AssetImageOr(
+          path: assetPath,
+          width: 56,
+          height: 56,
+          fallback: Icon(fallbackIcon, size: 32),
+        ),
       ),
     );
   }

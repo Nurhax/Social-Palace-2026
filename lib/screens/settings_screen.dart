@@ -48,7 +48,7 @@ class SettingsScreen extends StatelessWidget {
                   : '${latest.log.dateLabel}: ${latest.log.text}',
             ),
             const SizedBox(height: 26),
-            _row('ID:', state.userId),
+            _row('Palace:', state.userId),
             const SizedBox(height: 36),
             Center(
               child: ComicButton(
@@ -189,7 +189,7 @@ class ThemeSelectScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: GestureDetector(
                         onTap: () {
-                          if (!selected) AudioService.instance.playSelect();
+                          if (!selected) AudioService.instance.playConfirm();
                           state.setPalette(p);
                         },
                         child: Opacity(

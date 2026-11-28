@@ -3,6 +3,7 @@ import '../audio/audio_service.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_assets.dart';
+import '../theme/app_theme.dart';
 import '../widgets/comic_shapes.dart';
 import '../widgets/social_link_card.dart';
 import '../widgets/sopal_chrome.dart';
@@ -56,15 +57,11 @@ class _LogsScreenState extends State<LogsScreen> {
       ),
       body: links.isEmpty
           ? const Center(
-              child: Text(
+              child: ComicText(
                 'No social links yet.\nAdd one in Social Links.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                  fontSize: 18,
-                ),
+                fontSize: 18,
+                strokeWidth: 5,
               ),
             )
           : ListView.builder(
@@ -142,14 +139,7 @@ class _LogsScreenState extends State<LogsScreen> {
           if (link.logs.isEmpty)
             const Padding(
               padding: EdgeInsets.only(bottom: 4),
-              child: Text(
-                'No logs yet.',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
+              child: ComicText('No logs yet.', fontSize: 16, strokeWidth: 4),
             )
           else
             ..._logRows(link),

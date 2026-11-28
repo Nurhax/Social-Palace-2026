@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../audio/audio_service.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
+import '../theme/app_assets.dart';
 import '../theme/app_theme.dart';
 import '../widgets/comic_shapes.dart';
 import '../widgets/persona_transitions.dart';
@@ -47,11 +48,7 @@ class _AddSocialLinkScreenState extends State<AddSocialLinkScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const ComicText('Arcana',
-                    fontSize: 26,
-                    fillColor: Colors.black,
-                    strokeColor: Colors.white,
-                    strokeWidth: 0),
+                const ComicText('Arcana', fontSize: 26),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -84,7 +81,15 @@ class _AddSocialLinkScreenState extends State<AddSocialLinkScreen> {
                                       fontWeight: FontWeight.bold,
                                       fontStyle: FontStyle.italic)),
                               SizedBox(width: 8),
-                              Icon(Icons.chevron_right, color: Colors.white),
+                              AssetImageOr(
+                                path: AppAssets.selectArcanaArrow,
+                                width: 24,
+                                height: 24,
+                                fallback: Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -93,20 +98,12 @@ class _AddSocialLinkScreenState extends State<AddSocialLinkScreen> {
                   ],
                 ),
                 const SizedBox(height: 26),
-                const ComicText('Name',
-                    fontSize: 26,
-                    fillColor: Colors.black,
-                    strokeColor: Colors.white,
-                    strokeWidth: 0),
+                const ComicText('Name', fontSize: 26),
                 const SizedBox(height: 10),
                 ComicTextField(
                     controller: _nameController, hint: 'Enter here...'),
                 const SizedBox(height: 26),
-                const ComicText('Current Level',
-                    fontSize: 26,
-                    fillColor: Colors.black,
-                    strokeColor: Colors.white,
-                    strokeWidth: 0),
+                const ComicText('Current Level', fontSize: 26),
                 const SizedBox(height: 10),
                 ComicTextField(
                   controller: _levelController,
