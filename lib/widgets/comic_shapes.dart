@@ -236,6 +236,7 @@ class ComicButton extends StatelessWidget {
 
   /// true -> plays the "deselect" sound (e.g. BACK) instead of "select".
   final bool deselect;
+  final bool playSound;
 
   const ComicButton({
     super.key,
@@ -246,6 +247,7 @@ class ComicButton extends StatelessWidget {
     this.fontSize = 22,
     this.icon,
     this.deselect = false,
+    this.playSound = true,
   });
 
   @override
@@ -254,10 +256,12 @@ class ComicButton extends StatelessWidget {
       onTap: onTap == null
           ? null
           : () {
-              if (deselect) {
-                AudioService.instance.playDeselect();
-              } else {
-                AudioService.instance.playSelect();
+              if (playSound) {
+                if (deselect) {
+                  AudioService.instance.playDeselect();
+                } else {
+                  AudioService.instance.playSelect();
+                }
               }
               onTap!();
             },

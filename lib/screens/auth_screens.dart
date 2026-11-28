@@ -64,15 +64,16 @@ class _EnterIdScreenState extends State<EnterIdScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  //Palace name as ID, user can enter their own palace name to log in. If it doesn't exist, they can create it.
   void _enter() {
     final state = AppScope.of(context);
     final input = _controller.text.trim();
     if (input.isEmpty) {
-      _toast('Enter your ID first');
+      _toast('Enter your Palace Name first');
       return;
     }
     if (!state.signIn(input)) {
-      _toast('ID "$input" not found. Tap "Tap Here" to create it.');
+      _toast('Palace "$input" not found. Tap "Tap Here" to create it.');
       return;
     }
     // Persona 5 music starts after login.
@@ -189,7 +190,7 @@ class _GetIdScreenState extends State<GetIdScreen> {
   void _copy() {
     final id = _controller.text.trim();
     if (id.isEmpty) {
-      _toast('Type an ID first');
+      _toast('Type a Palace Name first');
       return;
     }
     AudioService.instance.playSelect();
@@ -200,7 +201,7 @@ class _GetIdScreenState extends State<GetIdScreen> {
   void _done() {
     final id = _controller.text.trim();
     if (id.isEmpty) {
-      _toast('Type an ID first');
+      _toast('Type a Palace Name first');
       return;
     }
     final state = AppScope.of(context);
@@ -237,7 +238,8 @@ class _GetIdScreenState extends State<GetIdScreen> {
                 strokeWidth: 5,
               ),
               const SizedBox(height: 20),
-              const ComicText('Create Your ID', fontSize: 26, strokeWidth: 5),
+              const ComicText('Create Your Palace',
+                  fontSize: 26, strokeWidth: 5),
               const SizedBox(height: 20),
               ComicTextField(controller: _controller, hint: 'e.g. WorkFriends'),
               const SizedBox(height: 16),

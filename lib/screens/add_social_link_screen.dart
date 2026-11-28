@@ -63,7 +63,9 @@ class _AddSocialLinkScreenState extends State<AddSocialLinkScreen> {
                           AudioService.instance.playSelect();
                           final selected = await Navigator.of(context).push(
                             PersonaRoute<Arcana>(
-                              builder: (_) => const ArcanaSelectionScreen(),
+                              builder: (_) => ArcanaSelectionScreen(
+                                initialArcana: _arcana,
+                              ),
                             ),
                           );
                           if (selected != null) {
@@ -138,8 +140,17 @@ class _AddSocialLinkScreenState extends State<AddSocialLinkScreen> {
   }
 }
 
-class ArcanaSelectionScreen extends StatelessWidget {
-  const ArcanaSelectionScreen({super.key});
+class ArcanaSelectionScreen extends StatefulWidget {
+  final Arcana initialArcana;
+
+  const ArcanaSelectionScreen({super.key, required this.initialArcana});
+
+  @override
+  State<ArcanaSelectionScreen> createState() => _ArcanaSelectionScreenState();
+}
+
+class _ArcanaSelectionScreenState extends State<ArcanaSelectionScreen> {
+  late Arcana _selectedArcana = widget.initialArcana;
 
   @override
   Widget build(BuildContext context) {
@@ -175,13 +186,38 @@ class ArcanaSelectionScreen extends StatelessWidget {
                     ),
                     itemBuilder: (context, index) {
                       final arcana = kArcanaList[index];
+                      final isSelected = arcana == _selectedArcana;
                       return GestureDetector(
                         onTap: () {
                           AudioService.instance.playSelect();
-                          Navigator.of(context).pop(arcana);
+                          setState(() => _selectedArcana = arcana);
                         },
                         child: Center(
-                            child: ArcanaBadge(arcana: arcana, size: 84)),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              if (isSelected)
+                                Positioned(
+                                  left: -5,
+                                  top: -5,
+                                  right: -5,
+                                  bottom: -5,
+                                  child: IgnorePointer(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: const Color.fromARGB(
+                                              255, 222, 234, 255),
+                                          width: 5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ArcanaBadge(arcana: arcana, size: 84),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -190,7 +226,11 @@ class ArcanaSelectionScreen extends StatelessWidget {
                 ComicButton(
                   label: 'DONE',
                   fontSize: 24,
-                  onTap: () => Navigator.of(context).pop(),
+                  playSound: false,
+                  onTap: () {
+                    AudioService.instance.playConfirm();
+                    Navigator.of(context).pop(_selectedArcana);
+                  },
                 ),
               ],
             ),

@@ -52,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 36),
             Center(
               child: ComicButton(
-                label: 'Theme',
+                label: 'THEME',
                 fontSize: 24,
                 onTap: () => Navigator.of(context).push(
                   PersonaRoute<void>(builder: (_) => const ThemeSelectScreen()),

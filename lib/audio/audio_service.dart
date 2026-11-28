@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 /// Files (paths are relative to the assets/ folder) and the matching
 /// pubspec.yaml entries:
 ///   assets/audio/sfx/select.mp3     -> selecting / confirming
+///   assets/audio/sfx/confirm.mp3    -> confirming a selection
 ///   assets/audio/sfx/deselect.mp3   -> going back / deselecting
 ///   assets/audio/bgm/p5_theme.mp3   -> loops after login
 ///
@@ -22,13 +23,17 @@ class AudioService {
   static final AudioService instance = AudioService._();
 
   static const String selectSfx = 'audio/sfx/select.mp3';
+  static const String confirmSfx = 'audio/sfx/confirm.mp3';
   static const String deselectSfx = 'audio/sfx/deselect.mp3';
   static const String bgmTrack = 'audio/bgm/p5_theme.mp3';
+  static const String bgmTrack2 = 'audio/bgm/p3_theme2.mp3';
+  static const String bgmTrack3 = 'audio/bgm/p4_theme3.mp3';
 
   bool sfxEnabled = true;
   bool musicEnabled = true;
 
   late final _SfxPool _select;
+  late final _SfxPool _confirm;
   late final _SfxPool _deselect;
   late final AudioPlayer _bgm;
 
@@ -58,6 +63,7 @@ class AudioService {
     // 2) Players. Each SFX gets a small pool so rapid taps don't cut each
     //    other off.
     _select = _SfxPool(3);
+    _confirm = _SfxPool(3);
     _deselect = _SfxPool(3);
     _bgm = AudioPlayer();
     try {
@@ -68,7 +74,14 @@ class AudioService {
     }
 
     // 3) Load the files once, so the first tap doesn't have to.
-    for (final asset in [selectSfx, deselectSfx, bgmTrack]) {
+    for (final asset in [
+      selectSfx,
+      confirmSfx,
+      deselectSfx,
+      bgmTrack,
+      bgmTrack2,
+      bgmTrack3
+    ]) {
       try {
         await AudioCache.instance.load(asset);
         debugPrint('AudioService: loaded $asset');
@@ -85,6 +98,7 @@ class AudioService {
   // ---------------------------------------------------------------- SFX
 
   Future<void> playSelect() => _playSfx(selectSfx, () => _select);
+  Future<void> playConfirm() => _playSfx(confirmSfx, () => _confirm);
   Future<void> playDeselect() => _playSfx(deselectSfx, () => _deselect);
 
   Future<void> _playSfx(String asset, _SfxPool Function() pool) async {
